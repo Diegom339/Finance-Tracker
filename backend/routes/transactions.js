@@ -1,12 +1,26 @@
-const router = require('express').Router();
-const { startTransactionsSync } = require('../controllers/transactions');
+// routes/transactions.js
+import express from 'express';
+import Transaction from '../models/Transaction.js';
 
-// Exchange public_token for access_token
-router.post('/exchange', startTransactionsSync);
+const router = express.Router();
 
-// Fetch transactions
+// GET all transactions
 router.get('/', async (req, res) => {
-  // Query DB and return saved transactions
+  const transactions = await Transaction.find();
+  res.json(transactions);
 });
 
-module.exports = router;
+// POST new transaction
+router.post('/', async (req, res) => {
+  const newTransaction = new Transaction(req.body);
+  const saved = await newTransaction.save();
+  res.json(saved);
+});
+
+// DELETE a transaction
+router.delete('/:id', async (req, res) => {
+  await Transaction.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+export default router;
