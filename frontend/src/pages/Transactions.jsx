@@ -1,25 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTransactions, addTransaction } from '../services/api';
+import axios from 'axios';
+import { Table, Spinner, Alert } from 'react-bootstrap';
 
-export default function Transactions() {
+const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchTransactions()
-      .then((res) => setTransactions(res.data))
-      .catch((err) => console.error('Fetch error:', err));
+    const fetchTransactions = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/transactions');
+        setTransactions(response.data);
+      } catch (err) {
+        setError('Failed to load transactions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
   }, []);
 
+  if (loading) return <Spinner animation="border" className="d-block mx-auto mt-4" />;
+  if (error) return <Alert variant="danger" className="mt-4">{error}</Alert>;
+
   return (
-    <div>
-      <h2>Transactions</h2>
-      <ul>
-        {transactions.map((tx) => (
-          <li key={tx._id}>
-            {tx.date} - {tx.description} - ${tx.amount}
-          </li>
-        ))}
-      </ul>
+    <div className="container">
+      <h2 className="mb-4">Transactions</h2>
+      {transactions.length === 0 ? (
+        <p>No transactions found.</p>
+      ) : (
+        <Table striped bordered hover responsive>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Category</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map(tx => (
+              <tr key={tx._id}>
+                <td>{tx.description}</td>
+                <td>${tx.amount.toFixed(2)}</td>
+                <td>{tx.category}</td>
+                <td>{new Date(tx.date).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </div>
   );
-}
+};
+
+export default Transactions;
